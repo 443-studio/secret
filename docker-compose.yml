@@ -3,7 +3,7 @@ services:
     build: .
     restart: unless-stopped
     environment:
-      NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-https://secret.443.studio}
+      NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-}
     expose:
       - '3000'
     volumes:
