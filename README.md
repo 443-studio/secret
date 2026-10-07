@@ -35,3 +35,5 @@ pnpm dev
 Use the Compose type with `docker-compose.yml`. Set `NUXT_PUBLIC_SITE_URL` in the environment and add
 the domain on the `web` service, port `3000`. The SQLite file stays in the `secret-data` volume. Run
 one replica only.
+
+Deployed automatically with Dokploy on push to `main`.
