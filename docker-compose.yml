@@ -1,0 +1,13 @@
+services:
+  web:
+    build: .
+    restart: unless-stopped
+    environment:
+      NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-https://secret.443.studio}
+    expose:
+      - '3000'
+    volumes:
+      - secret-data:/data
+
+volumes:
+  secret-data:

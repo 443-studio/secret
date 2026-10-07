@@ -32,5 +32,6 @@ pnpm dev
 
 ## Deploy (Dokploy)
 
-Build with the `Dockerfile`. Mount a volume on `/data` (SQLite file). Set
-`NUXT_PUBLIC_SITE_URL=https://secret.443.studio`. Run one replica only.
+Use the Compose type with `docker-compose.yml`. Set `NUXT_PUBLIC_SITE_URL` in the environment and add
+the domain on the `web` service, port `3000`. The SQLite file stays in the `secret-data` volume. Run
+one replica only.
