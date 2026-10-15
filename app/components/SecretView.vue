@@ -2,60 +2,96 @@
    <div class="view">
       <Transition name="swap" mode="out-in" @after-enter="focusPin">
          <div v-if="view === 'loading'" key="loading" class="spinner">
-            <span class="spinner-ring" />
+            <KSpinner />
          </div>
 
-         <div v-else-if="view === 'ready'" key="ready" class="card" @keydown.enter.prevent="reveal">
-            <div class="card-header">
-               <h1 class="card-title">Someone sent you a secret</h1>
-               <p class="card-text">{{ readyText }}</p>
-            </div>
-            <UiPin
-               v-if="info?.pin"
-               ref="pinInput"
-               v-model="pin"
-               :error="pinError"
-               @complete="reveal"
-            />
-            <div class="actions">
-               <UiButton
-                  label="Open secret"
-                  icon="arrow-right"
-                  trailing
-                  :loading="loading"
-                  :disabled="info?.pin && !PIN_PATTERN.test(pin)"
-                  @click="reveal"
+         <KCard
+            v-else-if="view === 'ready'"
+            key="ready"
+            class="card"
+            title="Someone sent you a secret"
+            :description="readyText"
+            :level="1"
+            @keydown.enter.prevent="reveal"
+         >
+            <KStack>
+               <KPinInput
+                  v-if="info?.pin"
+                  ref="pinInput"
+                  class="pin"
+                  v-model="pin"
+                  :length="PIN_LENGTH"
+                  :invalid="pinError"
+                  aria-label="PIN"
+                  no-autofill
+                  @complete="reveal"
                />
-            </div>
-         </div>
+               <div class="actions">
+                  <KButton
+                     tone="neutral"
+                     trailing-icon="arrow-right"
+                     :loading="loading"
+                     :disabled="info?.pin && !PIN_PATTERN.test(pin)"
+                     @click="reveal"
+                  >
+                     Open secret
+                  </KButton>
+               </div>
+            </KStack>
+         </KCard>
 
-         <div v-else-if="view === 'revealed'" key="revealed" class="card">
-            <div class="card-header">
-               <h1 class="card-title">Secret</h1>
-               <p class="card-text">Deleted automatically on {{ formatDate(expiresAt) }}.</p>
-            </div>
-            <UiTextarea :model-value="text" aria-label="Secret" :rows="6" readonly copyable />
-            <div class="actions is-split">
-               <UiButton
-                  :label="confirming ? 'Click again to delete' : 'Delete now'"
-                  icon="trash"
-                  variant="danger"
-                  :loading="loading"
-                  @click="destroy"
-               />
-               <UiButton label="New secret" variant="soft" @click="emit('new')" />
-            </div>
-         </div>
+         <KCard
+            v-else-if="view === 'revealed'"
+            key="revealed"
+            class="card"
+            title="Secret"
+            :description="`Deleted automatically on ${formatDate(expiresAt)}.`"
+            :level="1"
+         >
+            <KStack>
+               <KTextarea
+                  :model-value="text"
+                  aria-label="Secret"
+                  :rows="6"
+                  readonly
+                  spellcheck="false"
+                  no-autofill
+               >
+                  <template #trailing>
+                     <KCopyButton :value="text" />
+                  </template>
+               </KTextarea>
+               <div class="actions is-split">
+                  <KButton
+                     icon="trash"
+                     variant="ghost"
+                     tone="danger"
+                     :loading="loading"
+                     @click="destroy"
+                  >
+                     {{ confirming ? 'Click again to delete' : 'Delete now' }}
+                  </KButton>
+                  <KButton variant="soft" tone="neutral" @click="emit('new')">New secret</KButton>
+               </div>
+            </KStack>
+         </KCard>
 
-         <div v-else key="status" class="card">
-            <div class="card-header">
-               <h1 class="card-title">{{ status.title }}</h1>
-               <p class="card-text">{{ status.text }}</p>
-            </div>
-            <div class="actions">
-               <UiButton label="New secret" icon="arrow-right" trailing @click="emit('new')" />
-            </div>
-         </div>
+         <KCard
+            v-else
+            key="status"
+            class="card"
+            :title="status.title"
+            :description="status.text"
+            :level="1"
+         >
+            <KStack>
+               <div class="actions">
+                  <KButton tone="neutral" trailing-icon="arrow-right" @click="emit('new')">
+                     New secret
+                  </KButton>
+               </div>
+            </KStack>
+         </KCard>
       </Transition>
    </div>
 </template>
@@ -98,7 +134,6 @@ const expiresAt = ref(0)
 const pin = ref('')
 const pinInput = ref<{ focus: () => void } | null>(null)
 const pinError = ref(false)
-const { notify } = useToast()
 const loading = ref(false)
 const confirming = ref(false)
 
@@ -158,7 +193,7 @@ async function reveal() {
 
 async function handleRevealError(cause: unknown) {
    if (!(cause instanceof SecretRequestError)) {
-      notify('The secret could not be decrypted. Make sure that you copied the full link.')
+      toast.error('The secret could not be decrypted. Make sure that you copied the full link.')
       return
    }
    if (cause.status === 410) {
@@ -168,13 +203,13 @@ async function handleRevealError(cause: unknown) {
    } else if (cause.status === 403 && info.value) {
       info.value = { ...info.value, attemptsLeft: Number(cause.data.attemptsLeft ?? 0) }
       pinError.value = info.value.pin
-      notify(info.value.pin ? 'Wrong PIN.' : 'The link is not correct.')
+      toast.error(info.value.pin ? 'Wrong PIN.' : 'The link is not correct.')
       await nextTick()
       pinInput.value?.focus()
    } else if (cause.status === 429) {
-      notify('Too many attempts. Try again in 15 minutes.')
+      toast.error('Too many attempts. Try again in 15 minutes.')
    } else {
-      notify('Something went wrong. Try again.')
+      toast.error('Something went wrong. Try again.')
    }
 }
 
@@ -193,7 +228,7 @@ async function destroy() {
       history.replaceState(null, '', '/')
       view.value = 'destroyed'
    } catch {
-      notify('The secret was not deleted. Try again.')
+      toast.error('The secret was not deleted. Try again.')
    } finally {
       loading.value = false
       confirming.value = false

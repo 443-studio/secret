@@ -5,12 +5,17 @@
             <NuxtLink to="/" class="brand-name">secret</NuxtLink>
             <span class="brand-by">by</span>
             <a href="https://443.studio" aria-label="443 studio">
-               <UiIcon name="logotype" class="brand-logo" />
+               <KIcon name="logotype" class="brand-logo" />
             </a>
          </div>
          <NuxtPage />
       </div>
-      <UiToaster />
+      <KOverlayHost
+         :toaster="{ position: 'top-center', max: 4, gap: 8 }"
+         :confirm="false"
+         :modals="false"
+         :loading="false"
+      />
    </div>
 </template>
 

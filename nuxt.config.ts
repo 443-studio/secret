@@ -1,5 +1,3 @@
-import svgLoader from 'vite-svg-loader'
-
 const securityHeaders = {
    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
    'X-Content-Type-Options': 'nosniff',
@@ -15,6 +13,15 @@ export default defineNuxtConfig({
    devtools: { enabled: false },
    telemetry: { enabled: false },
    features: { inlineStyles: false },
+
+   modules: ['@xleddyl/443-components-vue/nuxt'],
+
+   k: {
+      global: true,
+      theme: { cookie: false, default: 'dark' },
+      preset: { cookie: false },
+      icons: { dir: '~/assets/icons' },
+   },
 
    runtimeConfig: {
       dbPath: 'data/secrets.db',
@@ -49,8 +56,4 @@ export default defineNuxtConfig({
    },
 
    css: ['~/assets/css/main.css'],
-
-   vite: {
-      plugins: [svgLoader({ svgoConfig: { plugins: ['prefixIds'] } })],
-   },
 })

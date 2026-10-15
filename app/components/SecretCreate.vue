@@ -1,78 +1,112 @@
 <template>
    <div class="view">
       <Transition name="swap" mode="out-in">
-         <div v-if="!link" key="form" class="card rise">
-            <div class="card-header">
-               <h1 class="card-title">Share a secret</h1>
-               <p class="card-text">Create a private link to share a password or a note.</p>
-            </div>
-            <UiTextarea
-               v-model="note"
-               aria-label="Secret"
-               :rows="6"
-               :maxlength="MAX_NOTE_LENGTH"
-               placeholder="Paste a password, a key or a note"
-               @keydown.meta.enter.prevent="askPin"
-               @keydown.ctrl.enter.prevent="askPin"
-            />
-            <div class="actions">
-               <UiButton
-                  label="Create link"
-                  icon="arrow-right"
-                  trailing
-                  :loading="loading"
-                  @click="askPin"
+         <KCard
+            v-if="!link"
+            key="form"
+            class="card rise"
+            title="Share a secret"
+            description="Create a private link to share a password or a note."
+            :level="1"
+         >
+            <KStack>
+               <KTextarea
+                  v-model="note"
+                  aria-label="Secret"
+                  :rows="6"
+                  :maxlength="MAX_NOTE_LENGTH"
+                  placeholder="Paste a password, a key or a note"
+                  spellcheck="false"
+                  no-autofill
+                  @keydown.meta.enter.prevent="askPin"
+                  @keydown.ctrl.enter.prevent="askPin"
                />
-            </div>
-         </div>
+               <div class="actions">
+                  <KButton
+                     tone="neutral"
+                     trailing-icon="arrow-right"
+                     :loading="loading"
+                     @click="askPin"
+                  >
+                     Create link
+                  </KButton>
+               </div>
+            </KStack>
+         </KCard>
 
-         <div v-else key="result" class="card">
-            <div class="card-header">
-               <h1 class="card-title">Link ready</h1>
-               <p class="card-text">{{ resultText }}</p>
-            </div>
-            <UiInput :model-value="link" aria-label="Secret link" copyable />
-            <p class="hint">Deleted automatically on {{ formatDate(expiresAt) }}.</p>
-            <div class="actions is-split">
-               <UiButton label="New secret" variant="ghost" @click="reset" />
-               <UiButton
-                  :label="copied ? 'Copied' : 'Copy link'"
-                  :icon="copied ? 'clipboard-document-check' : 'clipboard-document'"
-                  @click="copy(link)"
-               />
-            </div>
-         </div>
+         <KCard
+            v-else
+            key="result"
+            class="card"
+            title="Link ready"
+            :description="resultText"
+            :level="1"
+         >
+            <KStack>
+               <KInput
+                  :model-value="link"
+                  aria-label="Secret link"
+                  class="k-mono"
+                  readonly
+                  spellcheck="false"
+                  no-autofill
+                  @focus="($event.target as HTMLInputElement).select()"
+               >
+                  <template #trailing>
+                     <KCopyButton :value="link" />
+                  </template>
+               </KInput>
+               <p class="hint">Deleted automatically on {{ formatDate(expiresAt) }}.</p>
+               <div class="actions is-split">
+                  <KButton variant="ghost" tone="neutral" @click="reset">New secret</KButton>
+                  <KButton
+                     tone="neutral"
+                     :icon="copied ? 'clipboard-document-check' : 'clipboard-document'"
+                     @click="copy(link)"
+                  >
+                     {{ copied ? 'Copied' : 'Copy link' }}
+                  </KButton>
+               </div>
+            </KStack>
+         </KCard>
       </Transition>
 
-      <UiModal
+      <KModal
          v-model:open="pinOpen"
+         size="sm"
          :title="pinStep ? 'Choose a PIN' : 'Add a PIN?'"
-         :text="
+         :description="
             pinStep
                ? `${PIN_LENGTH} digits. Send it to the recipient on a different channel.`
                : 'The recipient must type the PIN to open the secret.'
          "
       >
-         <template v-if="!pinStep">
+         <div v-if="!pinStep" class="actions">
+            <KButton variant="soft" tone="neutral" @click="generate()">No</KButton>
+            <KButton tone="neutral" @click="choosePin">Add PIN</KButton>
+         </div>
+         <KStack v-else @keydown.enter.prevent="submitPin">
+            <KPinInput
+               ref="pinInput"
+               class="pin"
+               v-model="pin"
+               :length="PIN_LENGTH"
+               aria-label="PIN"
+               no-autofill
+            />
             <div class="actions">
-               <UiButton label="No" variant="soft" @click="generate()" />
-               <UiButton label="Add PIN" @click="choosePin" />
-            </div>
-         </template>
-         <div v-else class="stack" @keydown.enter.prevent="submitPin">
-            <UiPin ref="pinInput" v-model="pin" />
-            <div class="actions">
-               <UiButton label="Back" variant="ghost" @click="pinStep = false" />
-               <UiButton
-                  label="Create link"
-                  icon="arrow-right"
-                  trailing
+               <KButton variant="ghost" tone="neutral" @click="pinStep = false">Back</KButton>
+               <KButton
+                  tone="neutral"
+                  trailing-icon="arrow-right"
                   :disabled="!PIN_PATTERN.test(pin)"
                   @click="submitPin"
-               />
+               >
+                  Create link
+               </KButton>
             </div>
-         </div>
-      </UiModal>
+         </KStack>
+      </KModal>
    </div>
 </template>
 
@@ -88,7 +122,6 @@ const hasPin = ref(false)
 const expiresAt = ref(0)
 
 const { copied, copy } = useCopy()
-const { notify } = useToast()
 
 const resultText = computed(() =>
    hasPin.value
@@ -103,7 +136,7 @@ function reset() {
 
 function askPin() {
    if (!note.value.trim()) {
-      notify('Write the secret first.')
+      toast.error('Write the secret first.')
       return
    }
    pin.value = ''
@@ -132,7 +165,7 @@ async function generate(withPin?: string) {
       note.value = ''
       pin.value = ''
    } catch (cause) {
-      notify(
+      toast.error(
          cause instanceof SecretRequestError && cause.status === 429
             ? 'Too many secrets in a short time. Try again in 15 minutes.'
             : 'The secret was not saved. Try again.'
