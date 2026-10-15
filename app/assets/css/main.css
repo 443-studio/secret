@@ -1,21 +1,5 @@
 .k-root {
    --k-accent: #ff4d00;
-   --k-accent-contrast: #ffffff;
-   --k-canvas: #0d0d0f;
-   --k-surface: #141416;
-   --k-elevated: #141416;
-   --k-subtle: #18181b;
-   --k-field: #19191c;
-   --k-fill: #222226;
-   --k-text: #f2f2f3;
-   --k-text-toned: #cdcdd3;
-   --k-text-muted: #9b9ba5;
-   --k-text-dimmed: #686872;
-   --k-line: #232327;
-   --k-line-strong: #303036;
-   --k-field-line: #232327;
-   --k-danger: #f47a7a;
-   --k-warning: #efb255;
 }
 
 .page {
